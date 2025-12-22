@@ -35,18 +35,21 @@ transporter.verify(function (error, success) {
  * @param {string} html - HTML content (rendered from React Email)
  */
 const sendEmail = async (to, subject, html) => {
+    console.log(`📧 Preparing to send email to ${to} via ${host}:${port}...`);
     try {
         const info = await transporter.sendMail({
-            from: process.env.SMTP_FROM || '"ShareShed" <no-reply@shareshed.com>',
+            from: process.env.SMTP_FROM || `"ShareShed" <${process.env.SMTP_USER}>`,
             to,
             subject,
             html,
         });
 
-        console.log("Message sent: %s", info.messageId);
+        console.log("✅ Message sent successfully! Message ID: %s", info.messageId);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error("Error sending email:", error);
+        console.error("❌ Error sending email:", error);
+        // Log more details if available
+        if (error.response) console.error("SMTP Response:", error.response);
         return { success: false, error };
     }
 };
