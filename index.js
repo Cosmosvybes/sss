@@ -14,9 +14,25 @@ app.use(express.json()); // Parse JSON bodies
 
 // --- Firebase Initialization ---
 // We use environment variables for credentials to allow deployment on Render without a file
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : require('./service-account.json'); // Fallback for local dev
+let serviceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } catch (error) {
+        console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:', error);
+        process.exit(1);
+    }
+} else {
+    try {
+        serviceAccount = require('./service-account.json'); // Fallback for local dev
+    } catch (error) {
+        console.error('❌ FATAL ERROR: No Firebase credentials found.');
+        console.error('   - On Render: Set FIREBASE_SERVICE_ACCOUNT environment variable.');
+        console.error('   - Locally: Ensure service-account.json exists.');
+        process.exit(1);
+    }
+}
 
 if (!admin.apps.length) {
     admin.initializeApp({
