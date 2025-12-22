@@ -47,6 +47,37 @@ router.get('/resolve-account', verifyToken, async (req, res) => {
     }
 });
 
+// POST /api/payments/create-recipient
+// Create a Paystack Transfer Recipient
+router.post('/create-recipient', verifyToken, async (req, res) => {
+    const { name, account_number, bank_code } = req.body;
+
+    if (!name || !account_number || !bank_code) {
+        return res.status(400).json({ success: false, message: "Missing recipient details" });
+    }
+
+    try {
+        const response = await axios.post("https://api.paystack.co/transferrecipient", {
+            type: "nuban",
+            name,
+            account_number,
+            bank_code,
+            currency: "NGN"
+        }, {
+            headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
+        });
+
+        res.json({ success: true, data: response.data.data });
+    } catch (error) {
+        console.error("Create Recipient Error:", error.response?.data || error.message);
+        res.status(400).json({
+            success: false,
+            message: "Failed to create recipient",
+            details: error.response?.data?.message
+        });
+    }
+});
+
 // POST /api/payments/transfer
 // Secure transfer endpoint protected by Firebase Auth
 router.post('/transfer', verifyToken, async (req, res) => {
