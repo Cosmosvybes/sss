@@ -5,8 +5,9 @@ require('dotenv').config();
 const isGmail = process.env.SMTP_SERVICE === 'gmail' || process.env.SMTP_HOST === 'gmail';
 const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.com');
 
-const port = parseInt(process.env.SMTP_PORT || '465');
-const secure = port === 465; // true for 465, false for 587 (TLS)
+// Default to 587 (STARTTLS) which is less likely to be blocked than 465
+const port = parseInt(process.env.SMTP_PORT || '587');
+const secure = port === 465; // true for 465, false for 587 (uses STARTTLS)
 
 const transporter = nodemailer.createTransport({
     host: host,
