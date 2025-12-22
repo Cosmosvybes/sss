@@ -13,6 +13,7 @@ const transporter = nodemailer.createTransport({
     host: host,
     port: port,
     secure: secure,
+    family: 4, // Force IPv4 to prevent IPv6 connection timeouts on Render
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
