@@ -9,13 +9,21 @@ const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.
 const port = parseInt(process.env.SMTP_PORT || '587');
 const secure = port === 465; // true for 465, false for 587 (uses STARTTLS)
 
-// Use 'service: gmail' which automatically sets host, port (587/465), and secure settings correctly.
+// Hardcode settings to rule out Environment Variable blocking/overrides
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'gmail',
+    port: 587,
+    secure: false, // Use STARTTLS
+    family: 4,     // Force IPv4
     auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '', // Remove spaces if present
+        pass: process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '',
     },
+    tls: {
+        ciphers: 'SSLv3'
+    },
+    logger: true, // Log SMTP traffic
+    debug: true   // Include debug info
 });
 
 // Verify connection configuration
