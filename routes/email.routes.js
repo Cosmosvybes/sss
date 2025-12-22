@@ -52,7 +52,14 @@ router.post('/send-transactional', verifyToken, async (req, res) => {
         if (result.success) {
             res.json({ success: true, message: 'Email sent successfully', id: result.messageId });
         } else {
-            res.status(500).json({ success: false, message: 'Failed to send email', error: result.error });
+            res.status(500).json({
+                success: false,
+                message: 'Failed to send email',
+                debugUser: process.env.SMTP_USER ? 'Set' : 'Missing', // Don't send full email for privacy, just check existence
+                error: result.error?.message || result.error,
+                code: result.error?.code,
+                response: result.error?.response
+            });
         }
 
     } catch (error) {
