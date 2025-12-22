@@ -9,6 +9,44 @@ const db = admin.firestore();
 // Securely access Paystack Key from Environment Variable
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET;
 
+// GET /api/payments/banks
+// Fetch list of banks from Paystack
+router.get('/banks', async (req, res) => {
+    try {
+        const response = await axios.get("https://api.paystack.co/bank", {
+            headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error("Fetch Banks Error:", error.message);
+        res.status(500).json({ success: false, message: "Failed to fetch banks" });
+    }
+});
+
+// GET /api/payments/resolve-account
+// Verify account number
+router.get('/resolve-account', verifyToken, async (req, res) => {
+    const { account_number, bank_code } = req.query;
+
+    if (!account_number || !bank_code) {
+        return res.status(400).json({ success: false, message: "Missing account details" });
+    }
+
+    try {
+        const response = await axios.get(`https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`, {
+            headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error("Resolve Account Error:", error.response?.data || error.message);
+        res.status(400).json({
+            success: false,
+            message: "Could not verify account",
+            details: error.response?.data?.message
+        });
+    }
+});
+
 // POST /api/payments/transfer
 // Secure transfer endpoint protected by Firebase Auth
 router.post('/transfer', verifyToken, async (req, res) => {
