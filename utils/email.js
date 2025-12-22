@@ -9,11 +9,10 @@ const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.
 const port = parseInt(process.env.SMTP_PORT || '587');
 const secure = port === 465; // true for 465, false for 587 (uses STARTTLS)
 
+// Use 'service: gmail' which automatically sets host, port (587/465), and secure settings correctly.
 const transporter = nodemailer.createTransport({
-    host: host,
-    port: port,
-    secure: secure,
-    family: 4, // Force IPv4 to prevent IPv6 connection timeouts on Render
+    service: 'gmail',
+    family: 4, // Keep this to prevent IPv6 timeouts
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
