@@ -41,8 +41,8 @@ router.get('/resolve-account', verifyToken, async (req, res) => {
         console.error("Resolve Account Error:", error.response?.data || error.message);
         res.status(400).json({
             success: false,
-            message: "Could not verify account",
-            details: error.response?.data?.message
+            message: error.response?.data?.message || "Could not verify account",
+            details: error.message
         });
     }
 });
@@ -72,8 +72,8 @@ router.post('/create-recipient', verifyToken, async (req, res) => {
         console.error("Create Recipient Error:", error.response?.data || error.message);
         res.status(400).json({
             success: false,
-            message: "Failed to create recipient",
-            details: error.response?.data?.message
+            message: error.response?.data?.message || "Failed to create recipient",
+            details: error.message
         });
     }
 });
