@@ -11,7 +11,7 @@ const secure = port === 465; // true for 465, false for 587 (uses STARTTLS)
 
 // Hardcode settings to rule out Environment Variable blocking/overrides
 const transporter = nodemailer.createTransport({
-    host: 'gmail',
+    host: 'smtp.gmail.com',
     port: 587,
     secure: false, // Use STARTTLS
     family: 4,     // Force IPv4
