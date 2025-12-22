@@ -39,6 +39,7 @@ router.post('/send-transactional', verifyToken, async (req, res) => {
                 html = getVerificationStatusTemplate(data.userName, data.status);
                 break;
             case 'login_alert':
+                console.log(`🔐 Login Alert Triggered for: ${to} on ${data.device} at ${data.time}`);
                 subject = 'Security Alert: New Login Detected';
                 html = getLoginAlertTemplate(data.name || 'User', data.time, data.device);
                 break;
