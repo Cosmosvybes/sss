@@ -1,63 +1,44 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Create reusable transporter object
 const isGmail = process.env.SMTP_SERVICE === 'gmail' || process.env.SMTP_HOST === 'gmail';
 const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.com');
 
 // Default to 587 (STARTTLS) which is less likely to be blocked than 465
 const port = parseInt(process.env.SMTP_PORT || '587');
-const secure = port === 465; // true for 465, false for 587 (uses STARTTLS)
+const { Resend } = require('resend');
+const dotenv = require('dotenv');
 
-// Hardcode settings to rule out Environment Variable blocking/overrides
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
-    family: 4,     // Force IPv4
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '',
-    },
-    tls: {
-        ciphers: 'SSLv3'
-    },
-    logger: true, // Log SMTP traffic
-    debug: true   // Include debug info
-});
+dotenv.config();
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-    if (error) {
-        console.log("❌ SMTP Connection Error:", error);
-    } else {
-        console.log(`✅ Server is ready to take our messages (Host: ${host}, Port: ${port}, Secure: ${secure})`);
-    }
-});
+// Initialize Resend with the provided API Key
+// NOTE: For production, move this to process.env.RESEND_API_KEY
+const resend = new Resend('re_6s5kzyXZ_DPx38oU3Mtt7omkKSoy6jVAp');
 
-/**
- * Send an email
- * @param {string} to - Recipient email
- * @param {string} subject - Email subject
- * @param {string} html - HTML content (rendered from React Email)
- */
 const sendEmail = async (to, subject, html) => {
-    console.log(`📧 Preparing to send email to ${to} via ${host}:${port}...`);
     try {
-        const info = await transporter.sendMail({
-            from: process.env.SMTP_FROM || `"ShareShed" <${process.env.SMTP_USER}>`,
-            to,
-            subject,
-            html,
+        console.log(`🚀 Sending email to ${to} via Resend...`);
+
+        // NOTE: 'onboarding@resend.dev' is the ONLY allowed sender for the free tier 
+        // until you verify your own domain on resend.com.
+        const { data, error } = await resend.emails.send({
+            from: 'ShareShed <onboarding@resend.dev>',
+            to: [to],
+            subject: subject,
+            html: html,
         });
 
-        console.log("✅ Message sent successfully! Message ID: %s", info.messageId);
-        return { success: true, messageId: info.messageId };
+        if (error) {
+            console.error('❌ Resend API Error:', error);
+            return { success: false, error: error };
+        }
+
+        console.log('✅ Email sent successfully:', data);
+        return { success: true, messageId: data.id };
+
     } catch (error) {
-        console.error("❌ Error sending email:", error);
-        // Log more details if available
-        if (error.response) console.error("SMTP Response:", error.response);
-        return { success: false, error };
+        console.error('❌ Unexpected Email Error:', error);
+        return { success: false, error: error };
     }
 };
 
