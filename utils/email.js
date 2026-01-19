@@ -1,11 +1,5 @@
-const nodemailer = require('nodemailer');
+
 require('dotenv').config();
-
-const isGmail = process.env.SMTP_SERVICE === 'gmail' || process.env.SMTP_HOST === 'gmail';
-const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.com');
-
-// Default to 587 (STARTTLS) which is less likely to be blocked than 465
-const port = parseInt(process.env.SMTP_PORT || '587');
 const { Resend } = require('resend');
 const dotenv = require('dotenv');
 
@@ -22,7 +16,7 @@ const sendEmail = async (to, subject, html) => {
         // NOTE: 'onboarding@resend.dev' is the ONLY allowed sender for the free tier 
         // until you verify your own domain on resend.com.
         const { data, error } = await resend.emails.send({
-            from: 'ShareShed <onboarding@resend.dev>',
+            from: 'ShareShed <shareshed@support.com>',
             to: [to],
             subject: subject,
             html: html,
