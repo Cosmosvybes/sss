@@ -81,11 +81,11 @@ router.post('/create-recipient', verifyToken, async (req, res) => {
 // POST /api/payments/transfer
 // Secure transfer endpoint protected by Firebase Auth
 router.post('/transfer', verifyToken, async (req, res) => {
-    const { amount, recipientCode, reason } = req.body;
+    const { bookingId, amount, recipientCode, reason } = req.body;
     const userId = req.user.uid;
 
-    if (!amount || !recipientCode) {
-        return res.status(400).json({ success: false, message: 'Missing amount or recipient' });
+    if (!amount || !recipientCode || !bookingId) {
+        return res.status(400).json({ success: false, message: 'Missing amount, recipient, or bookingId' });
     }
 
     if (!PAYSTACK_SECRET) {
@@ -94,18 +94,30 @@ router.post('/transfer', verifyToken, async (req, res) => {
     }
 
     try {
-        console.log(`Processing transfer of ₦${amount} for user ${userId}...`);
+        console.log(`Processing transfer of ₦${amount} for booking ${bookingId} (User: ${userId})...`);
 
-        // 1. (Optional) Check user Balance in Firestore before sending money
-        // const userRef = db.collection('users').doc(userId);
-        // ... balance check logic here ...
+        // 1. Check for Duplicate Payouts (Internal Idempotency)
+        const existingTx = await db.collection('transactions')
+            .where('bookingId', '==', bookingId)
+            .where('type', '==', 'payout')
+            .limit(1)
+            .get();
 
-        // 2. Make Secure API Call to Paystack
+        if (!existingTx.empty) {
+            console.log(`Duplicate payout request blocked for booking: ${bookingId}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Payout already initiated for this booking'
+            });
+        }
+
+        // 2. Make Secure API Call to Paystack with Reference
         const response = await axios.post("https://api.paystack.co/transfer", {
             source: "balance",
             amount: amount * 100, // Convert to Kobo
             recipient: recipientCode,
-            reason: reason || "ShareShed Payout"
+            reason: reason || "ShareShed Payout",
+            reference: `Payout_${bookingId}_${Date.now()}` // Paystack reference for idempotency
         }, {
             headers: {
                 Authorization: `Bearer ${PAYSTACK_SECRET}`,
@@ -119,6 +131,7 @@ router.post('/transfer', verifyToken, async (req, res) => {
             await db.collection('transactions').add({
                 type: 'payout',
                 userId: userId,
+                bookingId: bookingId,
                 amount: amount,
                 transferCode: result.data.transfer_code,
                 status: 'pending', // Paystack processes async
